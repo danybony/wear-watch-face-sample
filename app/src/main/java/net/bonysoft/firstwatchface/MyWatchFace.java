@@ -111,12 +111,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
             calendar = Calendar.getInstance();
         }
 
-        @Override
-        public void onDestroy() {
-            updateTimeHandler.removeMessages(MSG_UPDATE_TIME);
-            super.onDestroy();
-        }
-
         private Paint createTextPaint(int textColor) {
             Paint paint = new Paint();
             paint.setColor(textColor);
@@ -286,6 +280,12 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 long delayMs = INTERACTIVE_UPDATE_RATE_MS - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
                 updateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
+        }
+
+        @Override
+        public void onDestroy() {
+            updateTimeHandler.removeMessages(MSG_UPDATE_TIME);
+            super.onDestroy();
         }
     }
 }
