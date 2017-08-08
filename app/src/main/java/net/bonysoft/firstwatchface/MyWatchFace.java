@@ -48,27 +48,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
         return new Engine();
     }
 
-    private static class EngineHandler extends Handler {
-
-        private final WeakReference<MyWatchFace.Engine> weakReference;
-
-        public EngineHandler(MyWatchFace.Engine reference) {
-            weakReference = new WeakReference<>(reference);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            MyWatchFace.Engine engine = weakReference.get();
-            if (engine != null) {
-                switch (msg.what) {
-                    case MSG_UPDATE_TIME:
-                        engine.handleUpdateTimeMessage();
-                        break;
-                }
-            }
-        }
-    }
-
     private class Engine extends CanvasWatchFaceService.Engine {
         final Handler updateTimeHandler = new EngineHandler(this);
         boolean registeredTimeZoneReceiver = false;
@@ -286,6 +265,27 @@ public class MyWatchFace extends CanvasWatchFaceService {
         public void onDestroy() {
             updateTimeHandler.removeMessages(MSG_UPDATE_TIME);
             super.onDestroy();
+        }
+    }
+
+    private static class EngineHandler extends Handler {
+
+        private final WeakReference<MyWatchFace.Engine> weakReference;
+
+        public EngineHandler(MyWatchFace.Engine reference) {
+            weakReference = new WeakReference<>(reference);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            MyWatchFace.Engine engine = weakReference.get();
+            if (engine != null) {
+                switch (msg.what) {
+                    case MSG_UPDATE_TIME:
+                        engine.handleUpdateTimeMessage();
+                        break;
+                }
+            }
         }
     }
 }
