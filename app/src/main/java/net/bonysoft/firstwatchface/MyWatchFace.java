@@ -12,14 +12,12 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 import android.widget.Toast;
 
-import java.lang.ref.WeakReference;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -38,18 +36,12 @@ public class MyWatchFace extends CanvasWatchFaceService {
      */
     private static final long INTERACTIVE_UPDATE_RATE_MS = TimeUnit.SECONDS.toMillis(1);
 
-    /**
-     * Handler message id for updating the time periodically in interactive mode.
-     */
-    private static final int MSG_UPDATE_TIME = 0;
-
     @Override
     public Engine onCreateEngine() {
         return new Engine();
     }
 
     private class Engine extends CanvasWatchFaceService.Engine {
-        final Handler updateTimeHandler = new EngineHandler(this);
         boolean registeredTimeZoneReceiver = false;
         Paint backgroundPaint;
         Paint textPaint;
@@ -114,7 +106,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             // Whether the timer should be running depends on whether we're visible (as well as
             // whether we're in ambient mode), so we may need to start or stop the timer.
-            updateTimer();
+            scheduleUpdate();
         }
 
         private void registerReceiver() {
@@ -170,9 +162,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 invalidate();
             }
 
-            // Whether the timer should be running depends on whether we're visible (as well as
-            // whether we're in ambient mode), so we may need to start or stop the timer.
-            updateTimer();
+            scheduleUpdate();
         }
 
         /**
@@ -230,62 +220,35 @@ public class MyWatchFace extends CanvasWatchFaceService {
             canvas.drawText(text, xOffset, yOffset, textPaint);
         }
 
-        /**
-         * Starts the {@link #updateTimeHandler} timer if it should be running and isn't currently
-         * or stops it if it shouldn't be running but currently is.
-         */
-        private void updateTimer() {
-            updateTimeHandler.removeMessages(MSG_UPDATE_TIME);
-            if (shouldTimerBeRunning()) {
-                updateTimeHandler.sendEmptyMessage(MSG_UPDATE_TIME);
-            }
-        }
-
-        /**
-         * Returns whether the {@link #updateTimeHandler} timer should be running. The timer should
-         * only run when we're visible and in interactive mode.
-         */
-        private boolean shouldTimerBeRunning() {
-            return isVisible() && !isInAmbientMode();
-        }
-
-        /**
-         * Handle updating the time periodically in interactive mode.
-         */
-        private void handleUpdateTimeMessage() {
-            invalidate();
-            if (shouldTimerBeRunning()) {
+        private void scheduleUpdate() {
+            handler.removeCallbacks(invalidateRunnable);
+            if (shouldUpdateFrequently()) {
                 long timeMs = System.currentTimeMillis();
                 long delayMs = INTERACTIVE_UPDATE_RATE_MS - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
-                updateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
+                handler.postDelayed(invalidateRunnable, delayMs);
             }
+        }
+
+        private final Handler handler = new Handler();
+        private final Runnable invalidateRunnable = new Runnable() {
+            @Override
+            public void run() {
+                invalidate();
+                if (shouldUpdateFrequently()) {
+                    scheduleUpdate();
+                }
+            }
+        };
+
+        private boolean shouldUpdateFrequently() {
+            return isVisible() && !ambient;
         }
 
         @Override
         public void onDestroy() {
-            updateTimeHandler.removeMessages(MSG_UPDATE_TIME);
+            handler.removeCallbacks(invalidateRunnable);
             super.onDestroy();
         }
     }
 
-    private static class EngineHandler extends Handler {
-
-        private final WeakReference<MyWatchFace.Engine> weakReference;
-
-        public EngineHandler(MyWatchFace.Engine reference) {
-            weakReference = new WeakReference<>(reference);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            MyWatchFace.Engine engine = weakReference.get();
-            if (engine != null) {
-                switch (msg.what) {
-                    case MSG_UPDATE_TIME:
-                        engine.handleUpdateTimeMessage();
-                        break;
-                }
-            }
-        }
-    }
 }
