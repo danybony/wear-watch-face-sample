@@ -155,7 +155,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             if (ambient != inAmbientMode) {
                 ambient = inAmbientMode;
                 if (lowBitAmbient) {
-                    textPaint.setAntiAlias(!inAmbientMode);
+                    ambientTextPaint.setAntiAlias(false);
                 }
                 invalidate();
             }
