@@ -2,4 +2,5 @@
 <resources>
   <color name="background">#0e1161</color>
   <color name="digital_text">#e45454</color>
+  <color name="ambient_digital_text">#ffffff</color>
 </resources>

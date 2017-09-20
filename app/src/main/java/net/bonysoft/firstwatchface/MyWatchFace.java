@@ -45,6 +45,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         boolean registeredTimeZoneReceiver = false;
         Paint backgroundPaint;
         Paint textPaint;
+        Paint ambientTextPaint;
         boolean ambient;
         Calendar calendar;
         final BroadcastReceiver timeZoneReceiver = new BroadcastReceiver() {
@@ -78,6 +79,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             textPaint = new Paint();
             textPaint = createTextPaint(resources.getColor(R.color.digital_text, getTheme()));
+            ambientTextPaint = new Paint();
+            ambientTextPaint = createTextPaint(resources.getColor(R.color.ambient_digital_text, getTheme()));
 
             calendar = Calendar.getInstance();
         }
@@ -137,18 +140,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
             float textSize = resources.getDimension(isRound ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
 
             textPaint.setTextSize(textSize);
+            ambientTextPaint.setTextSize(textSize);
         }
 
         @Override
         public void onPropertiesChanged(Bundle properties) {
             super.onPropertiesChanged(properties);
             lowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
-        }
-
-        @Override
-        public void onTimeTick() {
-            super.onTimeTick();
-            invalidate();
         }
 
         @Override
@@ -200,24 +198,30 @@ public class MyWatchFace extends CanvasWatchFaceService {
             long now = System.currentTimeMillis();
             calendar.setTimeInMillis(now);
 
-            String text;
             if (ambient) {
-                text = String.format(
+                String time = String.format(
                         Locale.US,
                         "%d:%02d",
                         calendar.get(Calendar.HOUR),
                         calendar.get(Calendar.MINUTE)
                 );
+                canvas.drawText(time, xOffset, yOffset, ambientTextPaint);
             } else {
-                text = String.format(
+                String time = String.format(
                         Locale.US,
                         "%d:%02d:%02d",
                         calendar.get(Calendar.HOUR),
                         calendar.get(Calendar.MINUTE),
                         calendar.get(Calendar.SECOND)
                 );
+                canvas.drawText(time, xOffset, yOffset, textPaint);
             }
-            canvas.drawText(text, xOffset, yOffset, textPaint);
+        }
+
+        @Override
+        public void onTimeTick() {
+            super.onTimeTick();
+            invalidate();
         }
 
         private void scheduleUpdate() {
