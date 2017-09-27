@@ -1,5 +1,5 @@
 <resources>
   <string name="app_name">First watch face</string>
-  <string name="message">Watch face tapped</string>
+  <string name="message">Watch face tapped in (%1$d,%2$d)</string>
   <string name="my_digital_name">First Watch Face</string>
 </resources>
