@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,6 +13,7 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.view.SurfaceHolder;
@@ -63,20 +65,23 @@ public class MyWatchFace extends CanvasWatchFaceService {
          * disable anti-aliasing in ambient mode.
          */
         boolean lowBitAmbient;
+        private Resources resources;
+        private ConfigPreferences configPreferences;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MyWatchFace.this)
-                                      .setAcceptsTapEvents(true)
-                                      .build());
+                    .setAcceptsTapEvents(true)
+                    .build());
 
-            Resources resources = MyWatchFace.this.getResources();
+            resources = MyWatchFace.this.getResources();
             yOffset = resources.getDimension(R.dimen.digital_y_offset);
 
-            backgroundPaint = new Paint();
-            backgroundPaint.setColor(resources.getColor(R.color.background, getTheme()));
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MyWatchFace.this);
+            configPreferences = new ConfigPreferences(sharedPreferences);
+            loadBackgroundPaint();
 
             textPaint = new Paint();
             textPaint = createTextPaint(resources.getColor(R.color.digital_text, getTheme()));
@@ -99,6 +104,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             super.onVisibilityChanged(visible);
 
             if (visible) {
+                loadBackgroundPaint();
                 registerReceiver();
 
                 // Update time zone in case it changed while we weren't visible.
@@ -111,6 +117,17 @@ public class MyWatchFace extends CanvasWatchFaceService {
             // Whether the timer should be running depends on whether we're visible (as well as
             // whether we're in ambient mode), so we may need to start or stop the timer.
             scheduleUpdate();
+        }
+
+        private void loadBackgroundPaint() {
+            int colorResId;
+            if (configPreferences.isUsingDarkTheme()) {
+                colorResId = R.color.background_dark;
+            } else {
+                colorResId = R.color.background_light;
+            }
+            backgroundPaint = new Paint();
+            backgroundPaint.setColor(resources.getColor(colorResId, getTheme()));
         }
 
         private void registerReceiver() {
